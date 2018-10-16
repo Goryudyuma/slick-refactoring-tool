@@ -1,10 +1,14 @@
 module Main exposing (Model, Msg(..), init, main, update, view)
 
 import Browser
-import Html exposing (Html, div, h1, img, text, input, br, textarea, pre)
-import Html.Attributes exposing (src, value, placeholder, size, style)
-import Html.Events exposing (onInput)
+import Html exposing (Html, div, h1, img, text, input, br, textarea, pre, ul, li)
+import Html.Attributes exposing (src, value, placeholder, size, style, type_, property)
+import Html.Events exposing (onInput, onClick)
 import Regex exposing (..)
+import Json.Encode as Encode
+import Dict.Extra exposing (groupBy)
+import Dict
+import List
 
 
 ---- MODEL ----
@@ -13,13 +17,20 @@ import Regex exposing (..)
 type alias Model =
     {
         textBox:String,
-        textResult:String
+        result:List ResultOneLine
+    }
+
+type alias ResultOneLine =
+    {
+        index:Int,
+        deleteFlag:Bool,
+        text:String
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( {textBox = "", textResult = ""}, Cmd.none )
+    ( {textBox = "", result = []}, Cmd.none )
 
 preformat : String -> String
 preformat s =
@@ -54,30 +65,51 @@ preformat s =
         |> replaceAnyPrev "left outer join"
         |> replaceAny "where"
 
-findNums : String -> String
-findNums sx =
-    --let
-        --regexAll = Regex.find (Regex. "x(\\d+)")
-    --in
-        String.join sx ["1", "2"]
+findNums : String -> List String
+findNums s =
+    let
+        location : Regex.Regex
+        location =
+            Maybe.withDefault Regex.never <|
+            Regex.fromString "x(\\d+)"
+        regexAll = Regex.find location
+    in
+        Dict.keys (Dict.filter (\k v -> List.length v == 1) (groupBy (\m -> m) (List.map .match (regexAll s))))
 
-refactor : String -> String
+refactor : String -> List ResultOneLine
 refactor s =
+    let
+        recommendNumList = findNums s
+
+        recommend : List String -> String -> Bool
+        recommend ls str =
+            List.any (\l -> String.contains l str) ls
+
+        splitIndexed : String -> List (Int, String)
+        splitIndexed ss =
+            List.indexedMap Tuple.pair (String.split "\n" ss)
+
+        changeType : String -> List ResultOneLine
+        changeType ss =
+            List.map (\m -> {deleteFlag=recommend recommendNumList (Tuple.second m), text=Tuple.second m, index=Tuple.first m}) (splitIndexed ss)
+    in
     s
     |> preformat
-    |> findNums
+    |> changeType
 
 ---- UPDATE ----
 
 
 type Msg
     = ChangeTextBox String
+    | ToggleDelFlag Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ChangeTextBox s ->( {model | textBox = s, textResult = refactor s}, Cmd.none )
+        ChangeTextBox s ->( {model | textBox = s, result = refactor s}, Cmd.none )
+        ToggleDelFlag i -> ({model | result=List.map (\r -> if r.index == i then {r | deleteFlag= not r.deleteFlag} else r) model.result}, Cmd.none)
 
 
 
@@ -90,8 +122,17 @@ view model =
         [
             textarea [ size 300, style "height" "200px", placeholder "New Task" , value model.textBox, onInput ChangeTextBox] [],
             br[][],
-            pre [] [text model.textResult]
+            ul [style "list-style-type" "none"] (List.map (\m -> viewOneLine m) model.result)
         ]
+
+viewOneLine : ResultOneLine -> Html Msg
+viewOneLine rol =
+    li[][
+        div[][
+            input [ type_ "checkbox", onClick (ToggleDelFlag rol.index) , property "checked" (Encode.bool rol.deleteFlag)] [],
+            text rol.text
+        ]
+    ]
 
 
 subscriptions : Model -> Sub Msg
