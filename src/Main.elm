@@ -63,6 +63,7 @@ preformat s =
         |> replaceAnyPrev "inner join"
         |> replaceAnyPrev "left outer join"
         |> replaceAny "where"
+        |> replaceAnyPrev "and"
 
 findNums : String -> List String
 findNums s =
