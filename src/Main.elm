@@ -8,7 +8,6 @@ import Regex exposing (..)
 import Json.Encode as Encode
 import Dict.Extra exposing (groupBy)
 import Dict
-import List
 
 
 ---- MODEL ----
@@ -71,7 +70,7 @@ findNums s =
         location : Regex.Regex
         location =
             Maybe.withDefault Regex.never <|
-            Regex.fromString "x(\\d+)"
+            Regex.fromString "x\\d+"
         regexAll = Regex.find location
     in
         Dict.keys (Dict.filter (\k v -> List.length v == 1) (groupBy (\m -> m) (List.map .match (regexAll s))))
@@ -120,9 +119,10 @@ view : Model -> Html Msg
 view model =
     div []
         [
-            textarea [ size 300, style "height" "200px", placeholder "New Task" , value model.textBox, onInput ChangeTextBox] [],
+            textarea [ size 300, style "height" "200px", placeholder "Query" , value model.textBox, onInput ChangeTextBox] [],
             br[][],
-            ul [style "list-style-type" "none"] (List.map (\m -> viewOneLine m) model.result)
+            ul [style "list-style-type" "none"] (List.map (\m -> viewOneLine m) model.result),
+            text (String.join "\n" (findNums model.textBox))
         ]
 
 viewOneLine : ResultOneLine -> Html Msg
