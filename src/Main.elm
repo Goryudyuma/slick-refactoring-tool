@@ -92,7 +92,10 @@ refactor s =
 
         splitIndexed : String -> List (Int, String)
         splitIndexed ss =
-            List.indexedMap Tuple.pair (List.filter (\one -> one /= "") (String.split "\n" ss))
+            ss
+                |> String.split "\n"
+                |> List.filter (\one -> one /= "")
+                |> List.indexedMap Tuple.pair
 
         changeType : String -> List ResultOneLine
         changeType ss =
