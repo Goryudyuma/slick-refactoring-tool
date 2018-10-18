@@ -81,9 +81,14 @@ refactor s =
     let
         recommendNumList = findNums s
 
+        location : String -> Regex.Regex
+        location input =
+            Maybe.withDefault Regex.never <|
+            Regex.fromString (input ++ "[^\\d+]")
+
         recommend : List String -> String -> Bool
         recommend ls str =
-            List.any (\l -> String.contains l str) ls
+            List.any (\l -> Regex.contains (location l) str) ls
 
         splitIndexed : String -> List (Int, String)
         splitIndexed ss =
