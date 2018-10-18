@@ -92,7 +92,7 @@ refactor s =
 
         splitIndexed : String -> List (Int, String)
         splitIndexed ss =
-            List.indexedMap Tuple.pair (String.split "\n" ss)
+            List.indexedMap Tuple.pair (List.filter (\one -> one /= "") (String.split "\n" ss))
 
         changeType : String -> List ResultOneLine
         changeType ss =
@@ -102,19 +102,34 @@ refactor s =
     |> preformat
     |> changeType
 
+removeRecommend : List ResultOneLine -> String
+removeRecommend lro =
+    lro
+        |> List.filter (\one -> not one.deleteFlag)
+        |> List.map (\one -> one.text)
+        |> List.filter (\one -> one /= "")
+        |> String.join " \n"
+
+
+
 ---- UPDATE ----
 
 
 type Msg
     = ChangeTextBox String
     | ToggleDelFlag Int
+    | Execute
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        newTextBox = removeRecommend model.result
+    in
     case msg of
         ChangeTextBox s ->( {model | textBox = s, result = refactor s}, Cmd.none )
         ToggleDelFlag i -> ({model | result=List.map (\r -> if r.index == i then {r | deleteFlag= not r.deleteFlag} else r) model.result}, Cmd.none)
+        Execute -> ( {model | textBox = newTextBox, result = refactor newTextBox}, Cmd.none )
 
 
 
@@ -126,6 +141,7 @@ view model =
     div []
         [
             textarea [ size 300, style "height" "200px", placeholder "Query" , value model.textBox, onInput ChangeTextBox] [],
+            input [ type_ "button", onClick Execute, value "Execute"][],
             br[][],
             ul [style "list-style-type" "none"] (List.map (\m -> viewOneLine m) model.result),
             text (String.join "\n" (findNums model.textBox))
