@@ -5,5 +5,5 @@ steps:
   args: ['run', 'build']
 artifacts:
   objects:
-    location: 'gs://slick-refactoring-tool/'
+    location: 'gs://s.063.jp/'
     paths: ['dist/*']
