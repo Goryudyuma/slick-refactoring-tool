@@ -11,7 +11,15 @@ module.exports = {
         rules: [
             {
                 test: /\.(css|scss)$/,
-                loader: ['style-loader', 'css-loader', 'sass-loader'],
+                loader: 'style-loader'
+            },
+            {
+                test: /\.(css|scss)$/,
+                loader: 'css-loader'
+            },
+            {
+                test: /\.(css|scss)$/,
+                loader: 'sass-loader'
             },
             {
                 test:    /\.elm$/,
@@ -30,7 +38,7 @@ module.exports = {
         })
     ],
     mode: process.env.WEBPACK_SERVE ? 'development' : 'production',
-    serve: {
+    devServer: {
       contentBase: `${__dirname}/dist`,
       port: '8080',
       open: true,
